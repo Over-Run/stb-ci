@@ -391,6 +391,8 @@ extern "C" {
 #ifndef STBIDEF
 #ifdef STB_IMAGE_STATIC
 #define STBIDEF static
+#elif defined _MSC_VER
+#define STBIDEF extern __declspec(dllexport)
 #else
 #define STBIDEF extern
 #endif
