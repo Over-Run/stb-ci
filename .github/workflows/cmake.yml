@@ -43,7 +43,7 @@ jobs:
       with:
         name: Artifacts ${{ matrix.os }}
         path: |
-          ${{github.workspace}}/build/stb.dll
-          ${{github.workspace}}/build/stb.so
-          ${{github.workspace}}/build/stb.dylib
+          ${{github.workspace}}/build/Release/stb.dll
+          ${{github.workspace}}/build/libstb.so
+          ${{github.workspace}}/build/libstb.dylib
         if-no-files-found: ignore
