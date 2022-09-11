@@ -17,22 +17,22 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
-          # - os: ubuntu-latest
-          #   arch: x64
-          # - os: ubuntu-latest
-          #   arch: arm64
-          # - os: ubuntu-latest
-          #   arch: arm32
-          - os: windows-latest
-            arch: x64
-          - os: windows-latest
-            arch: Win32
-          - os: windows-latest
-            arch: ARM64
-          # - os: macos-latest
-          #   arch: x64
-          # - os: macos-latest
-          #   arch: ARM64
+          # - arch: x64
+          #   os: ubuntu-latest
+          # - arch: arm64
+          #   os: ubuntu-latest
+          # - arch: arm32
+          #   os: ubuntu-latest
+          - arch: x64
+            os: windows-latest
+          - arch: Win32
+            os: windows-latest
+          - arch: ARM64
+            os: windows-latest
+          # - arch: x64
+          #   os: macos-latest
+          # - arch: ARM64
+          #   os: macos-latest
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
