@@ -159,9 +159,17 @@ LICENSE
 #define STBIWDEF  static
 #else
 #ifdef __cplusplus
+#ifdef _MSC_VER
+#define STBIWDEF  extern "C" __declspec(dllexport)
+#else
 #define STBIWDEF  extern "C"
+#endif
+#else
+#ifdef _MSC_VER
+#define STBIWDEF  extern __declspec(dllexport)
 #else
 #define STBIWDEF  extern
+#endif
 #endif
 #endif
 #endif
