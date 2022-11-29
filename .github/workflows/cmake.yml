@@ -54,7 +54,7 @@ jobs:
         name: Configure CMake
       - run: |
           cmake --build ${{github.workspace}}/build --parallel
-          ${{matrix.STRIP}} ${{github.workspace}}/build/libglfw.so
+          ${{matrix.STRIP}} ${{github.workspace}}/build/libstb.so
         name: Build
       - uses: actions/upload-artifact@v3
         name: Upload Artifacts
