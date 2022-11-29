@@ -75,7 +75,7 @@ jobs:
             CMAKE_PARAMS: -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_OSX_ARCHITECTURES=arm64
     steps:
       - uses: actions/checkout@v3
-      - run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{CMAKE_PARAMS}}
+      - run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{matrix.CMAKE_PARAMS}}
         name: Configure CMake
       - run: |
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
