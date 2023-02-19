@@ -4,6 +4,8 @@
 #include "stb_image_resize.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#define STB_PERLIN_IMPLEMENTATION
+#include "stb_perlin.h"
 
 #ifndef STB_C_DLLEXPORT
 #ifdef _MSC_VER
