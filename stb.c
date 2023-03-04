@@ -6,6 +6,7 @@
 #include "stb_image_write.h"
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
+#include "stb_easy_font.h"
 
 #ifndef STB_C_DLLEXPORT
 #ifdef _MSC_VER
