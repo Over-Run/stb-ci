@@ -106,6 +106,12 @@ void print_string(float x, float y, char *text, float r, float g, float b)
 #ifndef INCLUDE_STB_EASY_FONT_H
 #define INCLUDE_STB_EASY_FONT_H
 
+#ifdef _MSC_VER
+#define STB_EASY_FONT_EXPORT extern __declspec(dllexport)
+#else
+#define STB_EASY_FONT_EXPORT extern
+#endif
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -170,7 +176,7 @@ typedef struct
    unsigned char c[4];
 } stb_easy_font_color;
 
-static int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int num_segs, int vertical, stb_easy_font_color c, char *vbuf, int vbuf_size, int offset)
+STB_EASY_FONT_EXPORT int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int num_segs, int vertical, stb_easy_font_color c, char *vbuf, int vbuf_size, int offset)
 {
     int i,j;
     for (i=0; i < num_segs; ++i) {
@@ -191,12 +197,13 @@ static int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int nu
 }
 
 static float stb_easy_font_spacing_val = 0;
-static void stb_easy_font_spacing(float spacing)
+STB_EASY_FONT_EXPORT float stb_easy_font_get_spacing() { return stb_easy_font_spacing_val; }
+STB_EASY_FONT_EXPORT void stb_easy_font_spacing(float spacing)
 {
    stb_easy_font_spacing_val = spacing;
 }
 
-static int stb_easy_font_print(float x, float y, char *text, unsigned char color[4], void *vertex_buffer, int vbuf_size)
+STB_EASY_FONT_EXPORT int stb_easy_font_print(float x, float y, char *text, unsigned char color[4], void *vertex_buffer, int vbuf_size)
 {
     char *vbuf = (char *) vertex_buffer;
     float start_x = x;
@@ -227,7 +234,7 @@ static int stb_easy_font_print(float x, float y, char *text, unsigned char color
     return (unsigned) offset/64;
 }
 
-static int stb_easy_font_width(char *text)
+STB_EASY_FONT_EXPORT int stb_easy_font_width(char *text)
 {
     float len = 0;
     float max_len = 0;
@@ -245,7 +252,7 @@ static int stb_easy_font_width(char *text)
     return (int) ceil(max_len);
 }
 
-static int stb_easy_font_height(char *text)
+STB_EASY_FONT_EXPORT int stb_easy_font_height(char *text)
 {
     float y = 0;
     int nonempty_line=0;
