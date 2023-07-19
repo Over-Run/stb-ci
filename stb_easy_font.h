@@ -176,7 +176,7 @@ typedef struct
    unsigned char c[4];
 } stb_easy_font_color;
 
-STB_EASY_FONT_EXPORT int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int num_segs, int vertical, stb_easy_font_color c, char *vbuf, int vbuf_size, int offset)
+int stb_easy_font_draw_segs(float x, float y, unsigned char *segs, int num_segs, int vertical, stb_easy_font_color c, char *vbuf, int vbuf_size, int offset)
 {
     int i,j;
     for (i=0; i < num_segs; ++i) {
