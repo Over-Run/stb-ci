@@ -9,7 +9,7 @@
 #include "stb_easy_font.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
-#include "stb_vorbis.h"
+#include "stb_vorbis.c"
 
 #ifndef STB_C_DLLEXPORT
 #ifdef _MSC_VER
