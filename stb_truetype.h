@@ -501,6 +501,8 @@ int main(int arg, char **argv)
 
 #ifdef STBTT_STATIC
 #define STBTT_DEF static
+#elif defined _MSC_VER
+#define STBTT_DEF extern __declspec(dllexport)
 #else
 #define STBTT_DEF extern
 #endif

@@ -7,6 +7,9 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 #include "stb_easy_font.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+#include "stb_vorbis.h"
 
 #ifndef STB_C_DLLEXPORT
 #ifdef _MSC_VER
