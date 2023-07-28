@@ -90,10 +90,8 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        ARCH: [x86, x64, ARM64]
+        ARCH: [x64, ARM64]
         include:
-          - ARCH: x86
-            PLATFORM: Win32
           - ARCH: x64
             PLATFORM: x64
           - ARCH: ARM64
