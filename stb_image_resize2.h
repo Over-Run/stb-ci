@@ -425,9 +425,17 @@ typedef uint64_t stbir_uint64;
 #define STBIRDEF static
 #else
 #ifdef __cplusplus
+#ifdef _MSC_VER
+#define STBIRDEF extern "C" __declspec(dllexport)
+#else
 #define STBIRDEF extern "C"
+#endif
+#else
+#ifdef _MSC_VER
+#define STBIRDEF extern __declspec(dllexport)
 #else
 #define STBIRDEF extern
+#endif
 #endif
 #endif
 #endif
