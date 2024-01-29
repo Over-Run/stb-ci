@@ -71,7 +71,11 @@
 #ifdef STBRP_STATIC
 #define STBRP_DEF static
 #else
+#ifdef _MSC_VER
+#define STBRP_DEF extern __declspec(dllexport)
+#else
 #define STBRP_DEF extern
+#endif
 #endif
 
 #ifdef __cplusplus
