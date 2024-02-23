@@ -59,7 +59,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         name: Upload Artifacts
         with:
-          name: Artifacts Linux ${{ matrix.ARCH }}
+          name: linux-${{ matrix.ARCH }}
           path: ${{github.workspace}}/build/libstb.so
   macos:
     name: macOS
@@ -83,7 +83,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         name: Upload Artifacts
         with:
-          name: Artifacts macOS ${{ matrix.ARCH }}
+          name: macos-${{ matrix.ARCH }}
           path: ${{github.workspace}}/build/libstb.dylib
   windows:
     name: Windows
@@ -105,5 +105,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         name: Upload Artifacts
         with:
-          name: Artifacts Windows ${{ matrix.ARCH }}
+          name: windows-${{ matrix.ARCH }}
           path: ${{github.workspace}}/build/Release/stb.dll
