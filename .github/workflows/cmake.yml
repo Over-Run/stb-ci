@@ -1,109 +1,214 @@
 name: CMake
 
 on:
-  push:
-    branches: [ "master" ]
+  workflow_dispatch:
   pull_request:
-    branches: [ "master" ]
+  push:
+    branches:
+      - main
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  CI_PARAMS: -DCMAKE_BUILD_TYPE=Release
 
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    # container:
+    #   image: centos:7
     strategy:
+      fail-fast: false
       matrix:
-        BUILD: [x64, ARM32, ARM64]
+        ARCH: [x64]
         include:
-          - BUILD: x64
-            ARCH: x64
-            PACKAGES: gcc
-            CC: CC=gcc
-            STRIP: strip
-          - BUILD: ARM32
-            ARCH: arm32
-            CROSS_ARCH: armhf
-            PACKAGES: gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
-            CC: PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig CC=arm-linux-gnueabihf-gcc
-            STRIP: arm-linux-gnueabihf-strip
-          - BUILD: ARM64
-            ARCH: arm64
-            CROSS_ARCH: arm64
-            PACKAGES: gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-            CC: PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/pkgconfig CC=aarch64-linux-gnu-gcc
-            STRIP: aarch64-linux-gnu-strip
+          - ARCH: x64
     env:
-      OVERRUNGL_ARCH: ${{matrix.ARCH}}
+      CI_ARCH: ${{matrix.ARCH}}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v3
-      - run: |
-          sudo sed -i 's/deb http/deb [arch=amd64,i386] http/' /etc/apt/sources.list
-          sudo grep "ubuntu.com/ubuntu" /etc/apt/sources.list | sudo tee /etc/apt/sources.list.d/ports.list
-          sudo sed -i 's/amd64,i386/armhf,arm64/' /etc/apt/sources.list.d/ports.list
-          sudo sed -i 's#http://.*/ubuntu#http://ports.ubuntu.com/ubuntu-ports#' /etc/apt/sources.list.d/ports.list
-          sudo dpkg --add-architecture ${{matrix.CROSS_ARCH}}
-          sudo apt-get update || true
-        if: contains(matrix.ARCH, 'x64') != true
-        name: Prepare cross-compilation
-      - run: sudo apt-get -yq --allow-unauthenticated --no-install-suggests --no-install-recommends install ${{matrix.PACKAGES}} -o Dpkg::Options::="--force-overwrite"
-        name: Install dependencies
-      - run: ${{matrix.CC}} cmake -B ${{github.workspace}}/build -DCMAKE_C_FLAGS="-std=c99 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
-        name: Configure CMake
-      - run: |
-          cmake --build ${{github.workspace}}/build --parallel
-          ${{matrix.STRIP}} ${{github.workspace}}/build/libstb.so
-        name: Build
-      - uses: actions/upload-artifact@v3
-        name: Upload Artifacts
+      - uses: actions/checkout@v4
         with:
-          name: linux-${{ matrix.ARCH }}
-          path: ${{github.workspace}}/build/libstb.so
+          fetch-depth: 3
+      - name: Configure build
+        run: |
+          source scl_source enable devtoolset-11 || true
+          cmake -B build $CI_PARAMS -DCMAKE_C_FLAGS="-std=c99 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+      - name: Build
+        run: |
+          source scl_source enable devtoolset-11 || true
+          cmake --build build --parallel
+          strip build/libstb.so
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{matrix.ARCH}}
+          path: build/libstb.so
+          if-no-files-found: error
+
+  linux-cross:
+    name: Linux Cross
+    runs-on: ubuntu-latest
+    container:
+      image: ${{matrix.CONTAINER}}
+    strategy:
+      fail-fast: false
+      matrix:
+        ARCH: [arm32, arm64, ppc64le, riscv64]
+        include:
+          # ----
+          - ARCH: arm32
+            CROSS_ARCH: armhf
+            CONTAINER: ubuntu:18.04
+            TRIPLET: arm-linux-gnueabihf
+          # ----
+          - ARCH: arm64
+            CROSS_ARCH: arm64
+            CONTAINER: ubuntu:18.04
+            TRIPLET: aarch64-linux-gnu
+          # ----
+          - ARCH: ppc64le
+            CROSS_ARCH: ppc64el
+            CONTAINER: ubuntu:18.04
+            TRIPLET: powerpc64le-linux-gnu
+          # ----
+          - ARCH: riscv64
+            CROSS_ARCH: riscv64
+            CONTAINER: ubuntu:20.04
+            TRIPLET: riscv64-linux-gnu
+    env:
+      CI_ARCH: ${{matrix.ARCH}}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Update apt repositories
+        run: |
+          apt-get -y update
+          apt-get -y install software-properties-common wget
+          apt-get -y install --reinstall ca-certificates
+          apt-get -y update
+          apt-get -y upgrade
+          wget https://apt.kitware.com/keys/kitware-archive-latest.asc
+          apt-key add kitware-archive-latest.asc
+          add-apt-repository -y 'deb https://apt.kitware.com/ubuntu/ bionic main'
+          add-apt-repository -y ppa:git-core/ppa
+      #   if: ${{ matrix.CONTAINER == 'ubuntu:18.04' }}
+      - name: Upgrade git
+        run: |
+          apt-get -y update
+          apt-get -y upgrade
+          DEBIAN_FRONTEND=noninteractive apt-get -yq install git cmake pkg-config
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 3
+      - name: Prepare cross-compilation for ${{matrix.CROSS_ARCH}}
+        run: |
+          sed -i 's/deb http/deb [arch=amd64,i386] http/' /etc/apt/sources.list
+          grep "ubuntu.com/ubuntu" /etc/apt/sources.list | tee /etc/apt/sources.list.d/ports.list
+          sed -i 's/amd64,i386/${{matrix.CROSS_ARCH}}/' /etc/apt/sources.list.d/ports.list
+          sed -i 's#http://.*/ubuntu#http://ports.ubuntu.com/ubuntu-ports#' /etc/apt/sources.list.d/ports.list
+          dpkg --add-architecture ${{matrix.CROSS_ARCH}}
+          apt-get update
+      - name: Install dependencies
+        run: apt-get -yq --no-install-suggests --no-install-recommends install gcc-${{matrix.TRIPLET}} libc6-dev-${{matrix.CROSS_ARCH}}-cross
+      - name: Configure build
+        run: PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${CMAKE_SYSROOT}/usr/lib/${{matrix.TRIPLET}}/pkgconfig CC=${{matrix.TRIPLET}}-gcc cmake -B build $CI_PARAMS -DCMAKE_C_FLAGS="-std=c99 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+      - name: Build
+        run: |
+          cmake --build build --parallel
+          ${{matrix.TRIPLET}}-strip build/libstb.so
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-${{matrix.ARCH}}
+          path: build/libstb.so
+          if-no-files-found: error
+
+  freebsd-cross:
+    name: FreeBSD Cross
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 3
+      - name: Build
+        uses: cross-platform-actions/action@v0.24.0
+        with:
+          operating_system: freebsd
+          architecture: x86-64
+          version: '13.2'
+          memory: 4G
+          shell: bash
+          environment_variables: CI_PARAMS
+          run: |
+            sudo pkg install -y cmake gmake pkgconf
+            cmake -B build $CI_PARAMS -DCMAKE_C_FLAGS="-std=c99 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+            cmake --build build --parallel
+            strip build/libstb.so
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freebsd-x64
+          path: build/libstb.so
+          if-no-files-found: error
+
   macos:
     name: macOS
     runs-on: macos-latest
     strategy:
       matrix:
-        ARCH: [x64, ARM64]
+        ARCH: [x64, arm64]
         include:
           - ARCH: x64
-            CMAKE_PARAMS: -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9
-          - ARCH: ARM64
+            CMAKE_PARAMS: -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DCMAKE_OSX_ARCHITECTURES=x86_64
+          - ARCH: arm64
             CMAKE_PARAMS: -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_OSX_ARCHITECTURES=arm64
     steps:
-      - uses: actions/checkout@v3
-      - run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{matrix.CMAKE_PARAMS}}
-        name: Configure CMake
-      - run: |
-          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
-          strip -u -r ${{github.workspace}}/build/libstb.dylib
-        name: Build
-      - uses: actions/upload-artifact@v3
-        name: Upload Artifacts
+      - uses: actions/checkout@v4
         with:
-          name: macos-${{ matrix.ARCH }}
-          path: ${{github.workspace}}/build/libstb.dylib
+          fetch-depth: 3
+      - name: Configure build
+        run: cmake -B build $CI_PARAMS ${{matrix.CMAKE_PARAMS}}
+      - name: Build
+        run: |
+          cmake --build build --parallel
+          strip -u -r build/libstb.dylib
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{matrix.ARCH}}
+          path: build/libstb.dylib
+          if-no-files-found: error
+
   windows:
     name: Windows
     runs-on: windows-latest
     strategy:
       matrix:
-        ARCH: [x64, ARM64]
+        ARCH: [x64, arm64]
         include:
           - ARCH: x64
             PLATFORM: x64
-          - ARCH: ARM64
+          - ARCH: arm64
             PLATFORM: ARM64
+    defaults:
+      run:
+        shell: cmd
     steps:
-      - uses: actions/checkout@v3
-      - run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -A ${{ matrix.PLATFORM }} -DUSE_MSVC_RUNTIME_LIBRARY_DLL=OFF
-        name: Configure CMake
-      - run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
-        name: Build
-      - uses: actions/upload-artifact@v3
-        name: Upload Artifacts
+      - uses: actions/checkout@v4
         with:
-          name: windows-${{ matrix.ARCH }}
-          path: ${{github.workspace}}/build/Release/stb.dll
+          fetch-depth: 3
+      - name: Configure build
+        run: cmake -B build -G "Visual Studio 17 2022" -A ${{matrix.PLATFORM}} %CI_PARAMS% -DUSE_MSVC_RUNTIME_LIBRARY_DLL=OFF
+      - name: Build
+        run: cmake --build build --parallel --config Release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{matrix.ARCH}}
+          path: build\Release\stb.dll
+          if-no-files-found: error
