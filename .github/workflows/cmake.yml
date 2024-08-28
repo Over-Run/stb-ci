@@ -100,7 +100,7 @@ jobs:
           apt-get -y update
           apt-get -y upgrade
           DEBIAN_FRONTEND=noninteractive apt-get -yq install git cmake pkg-config
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 3
       - name: Prepare cross-compilation for ${{matrix.CROSS_ARCH}}
@@ -120,7 +120,7 @@ jobs:
           cmake --build build --parallel
           ${{matrix.TRIPLET}}-strip build/libstb.so
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-${{matrix.ARCH}}
           path: build/libstb.so
