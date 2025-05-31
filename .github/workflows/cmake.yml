@@ -60,22 +60,22 @@ jobs:
           # ----
           - ARCH: arm32
             CROSS_ARCH: armhf
-            CONTAINER: ubuntu:20.04
+            CONTAINER: ubuntu:22.04
             TRIPLET: arm-linux-gnueabihf
           # ----
           - ARCH: arm64
             CROSS_ARCH: arm64
-            CONTAINER: ubuntu:20.04
+            CONTAINER: ubuntu:22.04
             TRIPLET: aarch64-linux-gnu
           # ----
           - ARCH: ppc64le
             CROSS_ARCH: ppc64el
-            CONTAINER: ubuntu:20.04
+            CONTAINER: ubuntu:22.04
             TRIPLET: powerpc64le-linux-gnu
           # ----
           - ARCH: riscv64
             CROSS_ARCH: riscv64
-            CONTAINER: ubuntu:20.04
+            CONTAINER: ubuntu:22.04
             TRIPLET: riscv64-linux-gnu
     env:
       CI_ARCH: ${{matrix.ARCH}}
@@ -90,10 +90,13 @@ jobs:
           apt-get -y install --reinstall ca-certificates
           apt-get -y update
           apt-get -y upgrade
-          wget https://apt.kitware.com/keys/kitware-archive-latest.asc
-          apt-key add kitware-archive-latest.asc
-          add-apt-repository -y 'deb https://apt.kitware.com/ubuntu/ bionic main'
-          add-apt-repository -y ppa:git-core/ppa
+          test -f /usr/share/doc/kitware-archive-keyring/copyright ||
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+          apt-get -y update
+          test -f /usr/share/doc/kitware-archive-keyring/copyright ||
+          rm /usr/share/keyrings/kitware-archive-keyring.gpg
+          apt-get install kitware-archive-keyring
       #   if: ${{ matrix.CONTAINER == 'ubuntu:18.04' }}
       - name: Upgrade git
         run: |
